@@ -38,9 +38,7 @@ typeSystem(){
 	msg "status" "error"
 	fi
 
-	if [[ "$opt" == "1" || "$opt" == "2" ]]; then
-		option=0
-	fi
+	[[ $(validateNumber "$opt" 2) -eq 0 ]] && break || :
 
 	done
 }
@@ -131,7 +129,8 @@ view () {
 msg() {
 	local textStyle=("ELIJA SU TEMA BSPWM PREFERIDO:" DARK CATPPUCCIN ARCHDARK YAZI)
 	local textSystem=("ELIJA EL TIPO DE DISTRIBUCIÓN LINUX:" DEBIAN ARCHLINUX)
-	local textStatus=("[INFO] SCRIPT FINALIZADO" "❌ ERROR: opción inválida")
+	local textStatus=("[INFO] SCRIPT FINALIZADO" "X ERROR: opción inválida")
+	local textDesktop=("ELIJA SU TIPO DE ESCRITORIO ACTUAL:" xfce kde cinnamon gnome lxqt mate budgie minimal)
 	local type=$1
 	local result=""
 	if [[ "$type" == "selected" ]]; then
@@ -142,6 +141,9 @@ msg() {
 			arrays=( "${textStyle[@]}")
 		elif [[ "$text" == "system" ]]; then
 			arrays=( "${textSystem[@]}" )
+		elif [[ "$text" == "desktop" ]]; then
+			arrays=( "${textDesktop[@]}" )
+			
 		fi
 
 		for ((i = 0; i < 6; i++)); do
@@ -164,7 +166,7 @@ msg() {
 			result+="\n"
 		done
 	else
-			local width=31
+			local width=29
 			local status=$2
 			for ((i = 0; i < 3; i++)); do
 				if [[ $i -eq 0 ]]; then
@@ -185,6 +187,16 @@ msg() {
 	echo -e "$result"
 } 
                                               
+validateNumber() {
+	local number=$1
+	local limite=$2
+	if [[ "$number" =~ ^[0-9]+$ ]] && (( number >= 1 && number <= $limite )); then
+		echo 0
+	else
+		echo 1
+	fi
+
+}
 style(){                                      
 	while [[ true ]]; do
 		header
@@ -234,11 +246,55 @@ style(){
 				;;
 		esac
 		
-		if [[ "$opt" =~ ^[0-9]+$ ]] && (( opt >= 1 && opt <= 4 )); then
-			break			
-		fi
+		[[ $(validateNumber "$opt" 4) -eq 0 ]] && break || :
 		
 	done
+}
+
+typeDesktop() {
+	enviroment=""
+	while [[ true ]]; do
+		header
+		msg "selected" "desktop"
+		read -p "Ingrese una opción(1, 2, etc) o s(salir): " opt
+		# xfce kde cinnamon gnome lxqt mate budgie minimal
+		if [[ $opt -eq 1 ]]; then
+			enviroment="xfce"
+		elif [[ $opt -eq 2 ]]; then
+			enviroment="kde"
+		elif [[ $opt -eq 3 ]]; then
+			enviroment="cinnamon"
+		elif [[ $opt -eq 4 ]]; then
+			enviroment="gnome"
+		elif [[ $opt -eq 5 ]]; then
+			enviroment="lxqt"
+		elif [[ $opt -eq 6 ]]; then
+			enviroment="mate"
+		elif [[ $opt -eq 7 ]]; then
+			enviroment="budgie"
+		elif [[ $opt -eq 8 ]]; then
+			enviroment="minimal"
+		elif [[ $opt == "s" ]]; then
+			msg "status" "info"
+			exit 0
+		else
+			clear
+			msg "status" "error"
+		fi
+
+		[[ $(validateNumber "$opt" 8) -eq 0 ]] && break || :
+		
+	done
+	
+}
+
+validateDesktop() {
+	local desktop=$(echo "$XDG_CURRENT_DESKTOP")
+	if [[ "$desktop" != "XFCE" ]]; then
+		echo "Instalando thunar"
+	elif [[ -z "$desktop" ]]; then
+		echo "Instalando pcmanfm"
+	fi
 }
 
 header(){
@@ -264,8 +320,17 @@ EOF
 menu() {
 	typeSystem
 	clear
+	typeDesktop
 	style
+	echo "SO: $linux"
+	echo "Desktop: $enviroment"
 }
-apps=(bspwm sxhkd rofi polybar feh picom)
+apps=(bspwm sxhkd rofi polybar feh picom dunst alacritty kitty mpd ncmpcpp fasfetch pcmanfm yazi htop lsd bat scrot xautolock lxappearance)
+# Alternativos
+appsAlternativas=(neovim)
+appsConfig=(bspwm dunst kitty alacritty mpd ncmpcpp fasfetch picom polybar rofi bat nvim bat lsd)
+fileManager=(thunar dolphin nemo nautilus pcmanfm-qt caja)# pcmanfm-qt no se si sera igual a pcmanfm, budgie usa nautilus
 
+
+# Iniciando Instalador
 menu
