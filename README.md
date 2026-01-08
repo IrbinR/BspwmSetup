@@ -1,3 +1,4 @@
+![BSWPM](./.assets/bspwmLogo.png)
 # BSPWM SETUP
 Este es un script de instalación para BSPWM para distribuciones basadas en Debian y Archlinux.
 ## Tabla de Contenido
