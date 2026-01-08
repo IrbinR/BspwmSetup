@@ -143,7 +143,6 @@ msg() {
 			arrays=( "${textSystem[@]}" )
 		elif [[ "$text" == "desktop" ]]; then
 			arrays=( "${textDesktop[@]}" )
-			
 		fi
 
 		for ((i = 0; i < 6; i++)); do
@@ -257,7 +256,6 @@ typeDesktop() {
 		header
 		msg "selected" "desktop"
 		read -p "Ingrese una opción(1, 2, etc) o s(salir): " opt
-		# xfce kde cinnamon gnome lxqt mate budgie minimal
 		if [[ $opt -eq 1 ]]; then
 			enviroment="xfce"
 		elif [[ $opt -eq 2 ]]; then
@@ -288,13 +286,48 @@ typeDesktop() {
 	
 }
 
-validateDesktop() {
+fileManager() {
 	local desktop=$(echo "$XDG_CURRENT_DESKTOP")
 	if [[ "$desktop" != "XFCE" ]]; then
-		echo "Instalando thunar"
+		# sudo apt install thunar thunar-archive-plugin -y
+		echo "thunar thunar-archive-plugin"
 	elif [[ -z "$desktop" ]]; then
-		echo "Instalando pcmanfm"
+		# sudo apt
+		echo "pcmanfm"
+	else
+		echo ""
 	fi
+}
+
+getPackages() {
+	local apps=(bspwm sxhkd rofi polybar feh picom dunst alacritty kitty mpd ncmpcpp fasfetch yazi htop lsd bat scrot xautolock lxappearance)
+	local package=$(fileManager)
+	if [[ -n "$package" ]]; then
+		read -r -a packages <<< "$package"
+		apps+=("${packages[@]}")
+	fi
+	echo "${apps[@]}"
+}
+
+appsAlternatives() {
+	local appsAlternativas=(neovim)
+}
+
+installerPackage() {
+	local packageManager=("apt install" "pacman -S" "dnf install")
+	local packages=($(getPackages))
+	if [[ "$linux" == "debian" ]]; then
+		read -r manager param <<< "${packageManager[0]}" 
+	elif [[ "$linux" == "archlinux" ]]; then
+		read -r manager param <<< "${packageManager[1]}" 
+	else
+		read -r manager param <<< "${packageManager[2]}" 
+	fi
+	sudo "$manager" "$param" -y "${packages[@]}"	
+}
+
+configSetup() {
+	appsConfig=(bspwm dunst kitty alacritty mpd ncmpcpp fasfetch picom polybar rofi bat nvim bat lsd)
 }
 
 header(){
@@ -317,20 +350,13 @@ header(){
 EOF
 }
 
-menu() {
+init() {
 	typeSystem
 	clear
 	typeDesktop
 	style
-	echo "SO: $linux"
-	echo "Desktop: $enviroment"
 }
-apps=(bspwm sxhkd rofi polybar feh picom dunst alacritty kitty mpd ncmpcpp fasfetch pcmanfm yazi htop lsd bat scrot xautolock lxappearance)
-# Alternativos
-appsAlternativas=(neovim)
-appsConfig=(bspwm dunst kitty alacritty mpd ncmpcpp fasfetch picom polybar rofi bat nvim bat lsd)
-fileManager=(thunar dolphin nemo nautilus pcmanfm-qt caja)# pcmanfm-qt no se si sera igual a pcmanfm, budgie usa nautilus
 
 
 # Iniciando Instalador
-menu
+init
