@@ -286,6 +286,107 @@ typeDesktop() {
 	
 }
 
+getUserDirs() {
+	userDirs="$HOME/.config/user-dirs.dirs"
+	if [[ -r "$userDirs" ]]; then
+		source "$userDirs"
+	else
+		echo "Instalando xdg-user-dirs"
+		sudo apt install -y xdg-user-dirs
+		xdg-user-dirs-update
+		source "$userDirs"
+	fi
+}
+
+miniInstaller() {
+	local manager subcommand flag
+	read -r manager subcommand <<< "$(getParameters)"
+	flag=$(confirm)
+	sudo "$manager" "$subcommand" "$flag" "$1"
+}
+
+installZsh() {
+	mkdir -p "$LOGDIR"
+	LOGFILE="$LOGDIR/zsh_install.log"
+
+	if [[ -f "$LOGFILE" ]]; then
+		LAST_STEP=$(tail -n 1 $LOGFILE)
+	else
+		LAST_STEP=0
+	fi
+
+	if [[ "$LAST_STEP" -lt 1 ]]; then
+		# sudo pacman -S zsh --noconfirm
+		# local manager subcommand flag
+		# read -r manager subcommand <<< "$(getParameters)"
+		# flag=$(confirm)
+		# sudo "$manager" "$subcommand" "$flag" zsh
+		miniInstaller zsh
+		cat <<EOF >$LOGFILE
+		1
+EOF
+	fi
+
+	if [[ "$LAST_STEP" -lt 2 ]]; then
+		sudo usermod --shell /usr/bin/zsh root
+		sudo usermod --shell /usr/bin/zsh $USER
+		if [[ ! -f "$HOME/.zshrc" ]]; then
+# 			cat <<EOF >"$HOME/.zshrc"
+# 			# Zsh configuration file created automatically
+# EOF
+		touch "$HOME/.zshrc"
+		fi
+		cat <<EOF >>$LOGFILE
+		2
+EOF
+		cat <<EOF
+		╔═════════════════════════════════════════════════════╗
+		║                                                     ║
+		║ INSTRUCCIÓN DESPUÉS DE CERRAR SESIÓN:               ║ 	
+		║                                                     ║
+		║ Se cerrara su sesión actual, por lo cual debera     ║
+		║ iniciar sesión nuevamente.                          ║
+		║ Después ejecute otra vez el script de instalación   ║
+		║ para poder continuar y completar con la instalación ║
+		╚═════════════════════════════════════════════════════╝
+EOF
+	fi
+	read -p "Presione ENTER para cerrar sesión "
+	kill -9 -1
+
+	if [[ "$LAST_STEP" -lt 3 ]]; then
+		cat <<EOF
+		╔═════════════════════════════════════════════════════╗
+		║ 				 CONTINUANDO CON LA INSTALACIÓN             ║ 	
+		╚═════════════════════════════════════════════════════╝
+EOF
+		zimfw_cmd="curl -fsSL https://raw.githubusercontent.com/zimfw/install/master/install.zsh | zsh"
+		if command -v curl >/dev/null 2>&1; then
+			(zimfw_cmd)
+		else
+			miniInstaller curl
+			(zimfw_cmd)
+		fi
+		cat <<EOF >>$LOGFILE
+		3
+EOF
+	fi
+
+	if [[ "$LAST_STEP" -lt 4 ]]; then
+		filePath="$HOME/.zimrc"
+		sed -i "s|zmodule asciiship|#zmodule asciiship|" "$filePath"
+
+		source "$HOME/.config/user-dirs.dirs"
+		sudo pacman -S starship --noconfirm
+		cat <<EOF
+		========================================================
+		|                       STARSHIP                       |
+		========================================================
+				eval "\$(starship init zsh)"
+EOF
+	fi
+}
+
 fileManager() {
 	local desktop=$(echo "$XDG_CURRENT_DESKTOP")
 	if [[ "$desktop" != "XFCE" ]]; then
@@ -313,18 +414,69 @@ appsAlternatives() {
 	local appsAlternativas=(neovim)
 }
 
-installerPackage() {
+typePackageManager() {
 	local packageManager=("apt install" "pacman -S" "dnf install")
-	local packages=($(getPackages))
-	if [[ "$linux" == "debian" ]]; then
-		read -r manager param <<< "${packageManager[0]}" 
-	elif [[ "$linux" == "archlinux" ]]; then
-		read -r manager param <<< "${packageManager[1]}" 
-	else
-		read -r manager param <<< "${packageManager[2]}" 
-	fi
-	sudo "$manager" "$param" -y "${packages[@]}"	
+	echo "${packageManager[$1]}"
 }
+
+confirm() {
+	local param=""
+	if [[ "$linux" == "debian" || "$linux" == "fedora" ]]; then
+		param="-y"
+	elif [[ "$linux" == "archlinux" ]]; then
+		param="--noconfirm"
+	else
+		param="-n"
+	fi
+	echo "$param"
+}
+
+getParameters() {
+	local manager subcommand
+	if [[ "$linux" == "debian" ]]; then
+		IFS=' ' read -r manager subcommand <<< "$(typePackageManager 0)"
+	elif [[ "$linux" == "archlinux" ]]; then
+		IFS=' ' read -r manager subcommand <<< "$(typePackageManager 1)"
+	else
+		IFS=' ' read -r manager subcommand <<< "$(typePackageManager 2)"
+	fi
+	echo "$manager $subcommand"
+}
+
+installerPackage() {
+	local packages=($(getPackages))
+	local flag=$(confirm)
+	local manager subcommand
+	read -r manager subcommand <<< "$(getParameters)"
+	sudo "$manager" "$subcommand" "$flag" "${packages[@]}"	
+}
+
+# installerPackage() {
+# 	local packages=($(getPackages))
+# 	local noConfirm=$(confirm)
+# 	if [[ "$linux" == "debian" ]]; then
+# 		IFS=' ' read -r manager param <<< "$(typePackageManager 0)"
+# 	elif [[ "$linux" == "archlinux" ]]; then
+# 		IFS=' ' read -r manager param <<< "$(typePackageManager 1)"
+# 	else
+# 		IFS=' ' read -r manager param <<< "$(typePackageManager 2)"
+# 	fi
+#
+# 	sudo "$manager" "$param" "$noConfirm" "${packages[@]}"	
+# }
+
+# installerPackage() {
+# 	local packageManager=("apt install" "pacman -S" "dnf install")
+# 	local packages=($(getPackages))
+# 	if [[ "$linux" == "debian" ]]; then
+# 		read -r manager param <<< "${packageManager[0]}" 
+# 	elif [[ "$linux" == "archlinux" ]]; then
+# 		read -r manager param <<< "${packageManager[1]}" 
+# 	else
+# 		read -r manager param <<< "${packageManager[2]}" 
+# 	fi
+# 	sudo "$manager" "$param" -y "${packages[@]}"	
+# }
 
 configSetup() {
 	appsConfig=(bspwm dunst kitty alacritty mpd ncmpcpp fasfetch picom polybar rofi bat nvim bat lsd)
@@ -352,11 +504,14 @@ EOF
 
 init() {
 	typeSystem
-	clear
+	# clear
 	typeDesktop
 	style
+	#installZsh
+	# getPackages
 }
 
 
 # Iniciando Instalador
+# LOGDIR="$HOME/.local/share/my_temp_scripts"
 init
