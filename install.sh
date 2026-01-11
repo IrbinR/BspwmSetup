@@ -129,8 +129,10 @@ view () {
 msg() {
 	local textStyle=("ELIJA SU TEMA BSPWM PREFERIDO:" DARK CATPPUCCIN ARCHDARK YAZI)
 	local textSystem=("ELIJA EL TIPO DE DISTRIBUCIÓN LINUX:" DEBIAN ARCHLINUX)
-	local textStatus=("[INFO] SCRIPT FINALIZADO" "X ERROR: opción inválida")
+	local textStatus=("[INFO] SCRIPT FINALIZADO" "X ERROR: opción inválida" "CONTINUANDO CON LA INSTALACIÓN...")
 	local textDesktop=("ELIJA SU TIPO DE ESCRITORIO ACTUAL:" xfce kde cinnamon gnome lxqt mate budgie minimal)
+ 	local textSesion=("INSTRUCCIÓN DESPUÉS DE CERRAR SESIÓN:" "Se cerrara su sesión actual, por lo cual debera" "iniciar sesión nuevamente." "Después ejecute otra vez el script de instalación" "para poder continuar y completar con la instalación")
+
 	local type=$1
 	local result=""
 	if [[ "$type" == "selected" ]]; then
@@ -164,8 +166,29 @@ msg() {
 			fi
 			result+="\n"
 		done
+	elif [[ "$type" == "sesion" ]]; then
+		local width=55
+		for ((i = 0; i < 6; i++)); do
+			if [[ $i -eq 0 ]]; then
+				result+=$(view "top" $width)
+			elif [[ $i -eq 1 || $i -eq 3 ]]; then
+				result+=$(view "space" $width)
+			elif [[ $i -eq 2 ]]; then
+				result+=$(view "text" $width 0 "${textSesion[0]}")
+			elif [[ $i -eq 4 ]]; then
+				local rows="${#textSesion[@]}"
+				local lastRows=$((rows - 1))
+				for ((j = 1; j < $rows; j++)); do
+					result+=$(view "text" $width 0 "${textSesion[$j]}")
+					[[ $j -ne $lastRows ]] && result+="\n"
+				done
+			else
+				result+=$(view "bottom" $width)
+			fi
+			result+="\n"
+		done
 	else
-			local width=29
+			local width=37
 			local status=$2
 			for ((i = 0; i < 3; i++)); do
 				if [[ $i -eq 0 ]]; then
@@ -175,6 +198,8 @@ msg() {
 						result+=$(view "text" $width 0 "${textStatus[0]}")
 					elif [[ $status == "error" ]]; then
 						result+=$(view "text" $width 0 "${textStatus[1]}")
+					else
+						result+=$(view "text" $width 0 "${textStatus[2]}")
 					fi
 				else
 					result+=$(view "bottom" $width)
@@ -286,6 +311,27 @@ typeDesktop() {
 	
 }
 
+validatePathFont() {
+	local directory=$1
+	if [[ ! -d "$directory" ]]; then
+		mkdir -p "$directory"
+	fi
+}
+
+fuentesNerdFonts() {
+	tmpDir=$(mktemp -d)
+	local pathFonts="/usr/local/share/fonts"
+	local gitlab="https://gitlab.com/irbinr1/fuentesnerdfonts.git"
+	local repository="fuentesnerdfonts/NerdFonts"
+	git clone --depth 1 "$gitlab" "$tmpDir"
+	validatePathFont "$pathFonts/truetype"
+	validatePathFont "$pathFonts/opentype"
+	cp -rv "$tmpDir/$repository/TTF/*" "$pathFonts/truetype"
+	cp -rv "$tmpDir/$repository/OTF/*" "$pathFonts/opentype"
+	sudo fc-cache -fv
+	trap 'rm -rf "$tmpDir"' EXIT
+}
+
 getUserDirs() {
 	userDirs="$HOME/.config/user-dirs.dirs"
 	if [[ -r "$userDirs" ]]; then
@@ -298,11 +344,24 @@ getUserDirs() {
 	fi
 }
 
+installXorg() {
+	local packagesXorg=(xorg xserver-xorg xinit xterm)
+	miniInstaller "${packagesXorg[@]}"
+}
+
+validateXorg() {
+	if command Xorg --version >/dev/null 2>&1 || command X --version >/dev/null 2>&1; then
+		return 0
+	else
+		return 1		
+	fi
+}
+
 miniInstaller() {
 	local manager subcommand flag
 	read -r manager subcommand <<< "$(getParameters)"
 	flag=$(confirm)
-	sudo "$manager" "$subcommand" "$flag" "$1"
+	sudo "$manager" "$subcommand" "$flag" "${@}"
 }
 
 installZsh() {
@@ -339,27 +398,14 @@ EOF
 		cat <<EOF >>$LOGFILE
 		2
 EOF
-		cat <<EOF
-		╔═════════════════════════════════════════════════════╗
-		║                                                     ║
-		║ INSTRUCCIÓN DESPUÉS DE CERRAR SESIÓN:               ║ 	
-		║                                                     ║
-		║ Se cerrara su sesión actual, por lo cual debera     ║
-		║ iniciar sesión nuevamente.                          ║
-		║ Después ejecute otra vez el script de instalación   ║
-		║ para poder continuar y completar con la instalación ║
-		╚═════════════════════════════════════════════════════╝
-EOF
+		msg "sesion"
+		read -p "Presione ENTER para cerrar sesión "
+		kill -9 -1
 	fi
-	read -p "Presione ENTER para cerrar sesión "
-	kill -9 -1
 
 	if [[ "$LAST_STEP" -lt 3 ]]; then
-		cat <<EOF
-		╔═════════════════════════════════════════════════════╗
-		║ 				 CONTINUANDO CON LA INSTALACIÓN             ║ 	
-		╚═════════════════════════════════════════════════════╝
-EOF
+		msg "status" "continuacion"
+  	sleep 3
 		zimfw_cmd="curl -fsSL https://raw.githubusercontent.com/zimfw/install/master/install.zsh | zsh"
 		if command -v curl >/dev/null 2>&1; then
 			(zimfw_cmd)
@@ -394,6 +440,7 @@ fileManager() {
 		echo "thunar thunar-archive-plugin"
 	elif [[ -z "$desktop" ]]; then
 		# sudo apt
+		validateXorg && installXorg || :
 		echo "pcmanfm"
 	else
 		echo ""
@@ -505,9 +552,10 @@ EOF
 init() {
 	typeSystem
 	# clear
-	typeDesktop
+	# typeDesktop
 	style
 	#installZsh
+	# fuentesNerdFonts
 	# getPackages
 }
 
