@@ -5,40 +5,21 @@ typeSystem(){
 	linux=""
 	while [[ $option != 0 ]]; do
 		header
-# 		cat <<EOF
-# ╔═════════════════════════════════════════════════╗
-# ║                                                 ║
-# ║ ELIJA EL TIPO DE DISTRIBUCIÓN LINUX:            ║
-# ║                                                 ║
-# ║ 1. DEBIAN                                       ║
-# ║ 2. ARCHLINUX                                    ║
-# ╚═════════════════════════════════════════════════╝
-# EOF
-	msg "selected" "system"
-	read -p "Ingrese una opción(1, 2, etc) o s(salir): " opt
-	if [[ "$opt" == "1" ]]; then
-		linux="debian"
-	elif [[ "$opt" == "2" ]]; then
-		linux="archlinux"
-	elif [[ "$opt" == "s" ]]; then
-# 		cat <<EOF
-# ╔═══════════════════════════╗
-# ║ [INFO] SCRIPT FINALIZADO  ║
-# ╚═══════════════════════════╝
-# EOF
-		msg "status" "info"
-		exit 0
-	else
-		clear
-# 		cat <<EOF
-# ╔═══════════════════════════╗
-# ║ ❌ ERROR: opción inválida ║
-# ╚═══════════════════════════╝
-# EOF
-	msg "status" "error"
-	fi
+		msg "selected" "system"
+		read -p "Ingrese una opción(1, 2, etc) o s(salir): " opt
+		if [[ "$opt" == "1" ]]; then
+			linux="debian"
+		elif [[ "$opt" == "2" ]]; then
+			linux="archlinux"
+		elif [[ "$opt" == "s" ]]; then
+			msg "status" "info"
+			exit 0
+		else
+			clear
+			msg "status" "error"
+		fi
 
-	[[ $(validateNumber "$opt" 2) -eq 0 ]] && break || :
+		[[ $(validateNumber "$opt" 2) -eq 0 ]] && break || :
 
 	done
 }
@@ -83,7 +64,6 @@ view () {
 	else
 		local index=$3
 		local text=$4
-		# local count=$(( $width - (6 + $width-5-${#text}) ))
 		local count=$((${#text} - 1))
 		if [[ $index -ne 0 ]]; then
 			local limite=$((5 + count))
@@ -105,7 +85,6 @@ view () {
 				fi
 			done
 		else
-			# local count=$(( $width - (3 + $width-2-${#text}) ))
 			local limite=$((2 + count))
 			for ((i = 0; i < "$width"; i++)); do
 				if [[ $i -eq 0 || $i -eq $last ]]; then
@@ -130,7 +109,6 @@ msg() {
 	local textStyle=("ELIJA SU TEMA BSPWM PREFERIDO:" DARK CATPPUCCIN ARCHDARK YAZI)
 	local textSystem=("ELIJA EL TIPO DE DISTRIBUCIÓN LINUX:" DEBIAN ARCHLINUX)
 	local textStatus=("[INFO] SCRIPT FINALIZADO" "X ERROR: opción inválida" "CONTINUANDO CON LA INSTALACIÓN...")
-	local textDesktop=("ELIJA SU TIPO DE ESCRITORIO ACTUAL:" xfce kde cinnamon gnome lxqt mate budgie minimal)
  	local textSesion=("INSTRUCCIÓN DESPUÉS DE CERRAR SESIÓN:" "Se cerrara su sesión actual, por lo cual debera" "iniciar sesión nuevamente." "Después ejecute otra vez el script de instalación" "para poder continuar y completar con la instalación")
 
 	local type=$1
@@ -143,8 +121,6 @@ msg() {
 			arrays=( "${textStyle[@]}")
 		elif [[ "$text" == "system" ]]; then
 			arrays=( "${textSystem[@]}" )
-		elif [[ "$text" == "desktop" ]]; then
-			arrays=( "${textDesktop[@]}" )
 		fi
 
 		for ((i = 0; i < 6; i++)); do
@@ -221,20 +197,10 @@ validateNumber() {
 	fi
 
 }
+
 style(){                                      
 	while [[ true ]]; do
 		header
-# 		cat <<EOF
-# ╔═════════════════════════════════════════════════╗
-# ║                                                 ║
-# ║ ELIJA SU TEMA BSPWM PREFERIDO:                  ║ 
-# ║                                                 ║
-# ║ 1. DARK                                         ║
-# ║ 2. CATPPUCCIN                                   ║
-# ║ 3. ARCHDARK                                     ║
-# ║ 4. YAZI                                         ║
-# ╚═════════════════════════════════════════════════╝
-# EOF
 		msg "selected" "style"
 		read -p "Ingrese una opción(1, 2, etc) o s(salir): " opt
 		case "$opt" in
@@ -251,21 +217,11 @@ style(){
 				echo "INSTALANDO YAZI"
 				;;
 			s)
-# 				cat <<EOF
-# ╔═══════════════════════════╗
-# ║ [INFO] SCRIPT FINALIZADO  ║
-# ╚═══════════════════════════╝
-# EOF
 				msg "status" "info"
         exit 0
 				;;
 			*) 
 				clear
-# 				cat <<EOF
-# ╔═══════════════════════════╗
-# ║ ❌ ERROR: opción inválida ║
-# ╚═══════════════════════════╝
-# EOF
 				msg "status" "error"
 				;;
 		esac
@@ -273,42 +229,6 @@ style(){
 		[[ $(validateNumber "$opt" 4) -eq 0 ]] && break || :
 		
 	done
-}
-
-typeDesktop() {
-	enviroment=""
-	while [[ true ]]; do
-		header
-		msg "selected" "desktop"
-		read -p "Ingrese una opción(1, 2, etc) o s(salir): " opt
-		if [[ $opt -eq 1 ]]; then
-			enviroment="xfce"
-		elif [[ $opt -eq 2 ]]; then
-			enviroment="kde"
-		elif [[ $opt -eq 3 ]]; then
-			enviroment="cinnamon"
-		elif [[ $opt -eq 4 ]]; then
-			enviroment="gnome"
-		elif [[ $opt -eq 5 ]]; then
-			enviroment="lxqt"
-		elif [[ $opt -eq 6 ]]; then
-			enviroment="mate"
-		elif [[ $opt -eq 7 ]]; then
-			enviroment="budgie"
-		elif [[ $opt -eq 8 ]]; then
-			enviroment="minimal"
-		elif [[ $opt == "s" ]]; then
-			msg "status" "info"
-			exit 0
-		else
-			clear
-			msg "status" "error"
-		fi
-
-		[[ $(validateNumber "$opt" 8) -eq 0 ]] && break || :
-		
-	done
-	
 }
 
 validatePathFont() {
@@ -375,11 +295,6 @@ installZsh() {
 	fi
 
 	if [[ "$LAST_STEP" -lt 1 ]]; then
-		# sudo pacman -S zsh --noconfirm
-		# local manager subcommand flag
-		# read -r manager subcommand <<< "$(getParameters)"
-		# flag=$(confirm)
-		# sudo "$manager" "$subcommand" "$flag" zsh
 		miniInstaller zsh
 		cat <<EOF >$LOGFILE
 		1
@@ -390,9 +305,6 @@ EOF
 		sudo usermod --shell /usr/bin/zsh root
 		sudo usermod --shell /usr/bin/zsh $USER
 		if [[ ! -f "$HOME/.zshrc" ]]; then
-# 			cat <<EOF >"$HOME/.zshrc"
-# 			# Zsh configuration file created automatically
-# EOF
 		touch "$HOME/.zshrc"
 		fi
 		cat <<EOF >>$LOGFILE
@@ -436,10 +348,8 @@ EOF
 fileManager() {
 	local desktop=$(echo "$XDG_CURRENT_DESKTOP")
 	if [[ "$desktop" != "XFCE" ]]; then
-		# sudo apt install thunar thunar-archive-plugin -y
 		echo "thunar thunar-archive-plugin"
 	elif [[ -z "$desktop" ]]; then
-		# sudo apt
 		validateXorg && installXorg || :
 		echo "pcmanfm"
 	else
@@ -498,33 +408,6 @@ installerPackage() {
 	sudo "$manager" "$subcommand" "$flag" "${packages[@]}"	
 }
 
-# installerPackage() {
-# 	local packages=($(getPackages))
-# 	local noConfirm=$(confirm)
-# 	if [[ "$linux" == "debian" ]]; then
-# 		IFS=' ' read -r manager param <<< "$(typePackageManager 0)"
-# 	elif [[ "$linux" == "archlinux" ]]; then
-# 		IFS=' ' read -r manager param <<< "$(typePackageManager 1)"
-# 	else
-# 		IFS=' ' read -r manager param <<< "$(typePackageManager 2)"
-# 	fi
-#
-# 	sudo "$manager" "$param" "$noConfirm" "${packages[@]}"	
-# }
-
-# installerPackage() {
-# 	local packageManager=("apt install" "pacman -S" "dnf install")
-# 	local packages=($(getPackages))
-# 	if [[ "$linux" == "debian" ]]; then
-# 		read -r manager param <<< "${packageManager[0]}" 
-# 	elif [[ "$linux" == "archlinux" ]]; then
-# 		read -r manager param <<< "${packageManager[1]}" 
-# 	else
-# 		read -r manager param <<< "${packageManager[2]}" 
-# 	fi
-# 	sudo "$manager" "$param" -y "${packages[@]}"	
-# }
-
 configSetup() {
 	appsConfig=(bspwm dunst kitty alacritty mpd ncmpcpp fasfetch picom polybar rofi bat nvim bat lsd)
 }
@@ -549,17 +432,32 @@ header(){
 EOF
 }
 
+finish() {
+	cat <<EOF
+╔═════════════════════════════════════════════════╗
+║                                                 ║
+║    (‾⌣‾)ʕ·͡ᴥ·ʔ  SCRIPT COMPLETADO  (‾⌣‾)ʕ·͡ᴥ·ʔ    ║
+║                                                 ║
+╚═════════════════════════════════════════════════╝
+EOF
+}
+
 init() {
 	typeSystem
 	# clear
-	# typeDesktop
 	style
 	#installZsh
 	# fuentesNerdFonts
 	# getPackages
+	finish
+
 }
 
 
-# Iniciando Instalador
+# ╔═════════════════════════════════════════════════╗
+# ║                                                 ║
+# ║              INICIANDO INSTALADOR               ║
+# ║                                                 ║
+# ╚═════════════════════════════════════════════════╝
 # LOGDIR="$HOME/.local/share/my_temp_scripts"
 init
