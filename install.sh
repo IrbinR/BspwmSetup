@@ -231,6 +231,10 @@ style(){
 	done
 }
 
+cleanGithub() {
+	rm -rf "$tmpDir/*"
+}
+
 validatePathFont() {
 	local directory=$1
 	if [[ ! -d "$directory" ]]; then
@@ -249,6 +253,7 @@ fuentesNerdFonts() {
 	cp -rv "$tmpDir/$repository/TTF/*" "$pathFonts/truetype"
 	cp -rv "$tmpDir/$repository/OTF/*" "$pathFonts/opentype"
 	sudo fc-cache -fv
+	cleanGithub
 	trap 'rm -rf "$tmpDir"' EXIT
 }
 
@@ -257,8 +262,11 @@ getUserDirs() {
 	if [[ -r "$userDirs" ]]; then
 		source "$userDirs"
 	else
+		local manager subCommand flag
 		echo "Instalando xdg-user-dirs"
-		sudo apt install -y xdg-user-dirs
+		flag=$(confirm)
+		read -r  manager subCommand <<< $(getParameters)
+		sudo "$manager" "$command" "$flag" xdg-user-dirs
 		xdg-user-dirs-update
 		source "$userDirs"
 	fi
@@ -337,11 +345,12 @@ EOF
 		source "$HOME/.config/user-dirs.dirs"
 		sudo pacman -S starship --noconfirm
 		cat <<EOF
-		========================================================
-		|                       STARSHIP                       |
-		========================================================
-				eval "\$(starship init zsh)"
+========================================================
+|                       STARSHIP                       |
+========================================================
+eval "\$(starship init zsh)"
 EOF
+		rm -rf "$LOGDIR"
 	fi
 }
 
@@ -408,10 +417,65 @@ installerPackage() {
 	sudo "$manager" "$subcommand" "$flag" "${packages[@]}"	
 }
 
-configSetup() {
-	appsConfig=(bspwm dunst kitty alacritty mpd ncmpcpp fasfetch picom polybar rofi bat nvim bat lsd)
+validateDirConfig() {
+	local config=$1
+	local app=$2
+	if [[ -d "$config/$app" ]]; then
+		rm -rf "$config/$app"			
+	fi
 }
 
+copyConfig() {
+	local packages=$1
+	local config=$2
+	local directory=$3
+	for package in ${packages[@]}
+	do
+		validateDirConfig "$config" "$package"
+		cp -rv "$directory/$package" "$config"
+	done
+}
+
+configSetup() {
+	local configsBspwm=(bspwm dunst mpd ncmpcpp picom polybar rofi)
+	local configs=(alacritty kitty fasfetch lsd yazi)
+	local config="$HOME/.config"
+	local pathActual="$(pwd)/config"
+	git clone --depth 1 https://github.com/IrbinR/dotfiles.git "$tmpDir"
+	copyConfig "${configs[@]}" "$config" "$tmpDir/dotfiles"
+	copyConfig "${configsBspwm[@]}" "$config" "$pathActual"
+	cat <<EOF >> "$HOME/.zshrc"
+# ========================================================
+# |                         YAZI                         |
+# ========================================================
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	command yazi "$@" --cwd-file="$tmp"
+	IFS= read -r -d '' cwd < "$tmp"
+	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
+}
+
+# ========================================================
+# |                         LSD                          |
+# ========================================================
+alias ll='lsd -lh --group-dirs=first'
+alias la='lsd -a --group-dirs=first'
+alias l='lsd -l --group-dirs=first'
+alias lla='lsd -lha --group-dirs=first'
+alias ls='lsd --group-dirs=first'
+
+# ========================================================
+# |                       BATCAT                         |
+# ========================================================
+alias cat='bat'
+EOF
+}
+
+wallpaper() {
+	local pathWallpaper="$(pwd)/wallpaper"
+	cp -rv "$pathWallpaper" "$XDG_PICTURES_DIR"
+}
 header(){
 	cat <<EOF
 ╔═════════════════════════════════════════════════╗
@@ -446,11 +510,13 @@ init() {
 	typeSystem
 	# clear
 	style
-	#installZsh
+	# getUserDirs
+	# installZsh
 	# fuentesNerdFonts
+	# wallpaper
 	# getPackages
+	# configSetup
 	finish
-
 }
 
 
