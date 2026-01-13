@@ -100,7 +100,6 @@ view () {
 				fi
 			done
 		fi
-		
 	fi
 	echo "$result"
 }
@@ -195,7 +194,6 @@ validateNumber() {
 	else
 		echo 1
 	fi
-
 }
 
 style(){                                      
@@ -367,7 +365,7 @@ fileManager() {
 }
 
 getPackages() {
-	local apps=(bspwm sxhkd rofi polybar feh picom dunst alacritty kitty mpd ncmpcpp fasfetch yazi htop lsd bat scrot xautolock lxappearance)
+	local apps=(bspwm sxhkd rofi polybar feh picom dunst alacritty kitty mpd ncmpcpp fasfetch yazi htop lsd bat scrot xautolock lxappearance inetutils)
 	local package=$(fileManager)
 	if [[ -n "$package" ]]; then
 		read -r -a packages <<< "$package"
@@ -439,11 +437,21 @@ copyConfig() {
 configSetup() {
 	local configsBspwm=(bspwm dunst mpd ncmpcpp picom polybar rofi)
 	local configs=(alacritty kitty fasfetch lsd yazi)
+	local mpdConfig="$HOME/.config/mpd/mpd.conf"
+	local ncmpcppConfig="$HOME/.config/ncmpcpp/config"
+	local rofiConfig="$tmpDir/rofi"
 	local config="$HOME/.config"
 	local pathActual="$(pwd)/config"
 	git clone --depth 1 https://github.com/IrbinR/dotfiles.git "$tmpDir"
 	copyConfig "${configs[@]}" "$config" "$tmpDir/dotfiles"
 	copyConfig "${configsBspwm[@]}" "$config" "$pathActual"
+	cleanGithub
+  git clone --depth=1 https://github.com/adi1090x/rofi.git "$tmpDir"
+  chmod +x "$rofiConfig/setup.sh"
+  sed -i "s|^music_directory.*|music_directory \"$XDG_MUSIC_DIR\"|" "$mpdConfig"
+  sed -i "s|mpd_music_dir.*|mpd_music_dir = \"$XDG_MUSIC_DIR\"|" "$ncmpcppConfig"
+  sed -i "s|DIR=\`pwd\`|DIR='$rofiConfig'|" "$rofiConfig/setup.sh"
+  ./"$rofiConfig/setup.sh"
 	cat <<EOF >> "$HOME/.zshrc"
 # ========================================================
 # |                         YAZI                         |
@@ -476,6 +484,7 @@ wallpaper() {
 	local pathWallpaper="$(pwd)/wallpaper"
 	cp -rv "$pathWallpaper" "$XDG_PICTURES_DIR"
 }
+
 header(){
 	cat <<EOF
 ╔═════════════════════════════════════════════════╗
