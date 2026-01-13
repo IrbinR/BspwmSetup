@@ -236,23 +236,23 @@ cleanGithub() {
 validatePathFont() {
 	local directory=$1
 	if [[ ! -d "$directory" ]]; then
-		mkdir -p "$directory"
+		sudo mkdir -p "$directory"
 	fi
 }
 
 fuentesNerdFonts() {
 	tmpDir=$(mktemp -d)
+	trap 'rm -rf "$tmpDir"' EXIT
 	local pathFonts="/usr/local/share/fonts"
 	local gitlab="https://gitlab.com/irbinr1/fuentesnerdfonts.git"
 	local repository="fuentesnerdfonts/NerdFonts"
 	git clone --depth 1 "$gitlab" "$tmpDir"
 	validatePathFont "$pathFonts/truetype"
 	validatePathFont "$pathFonts/opentype"
-	cp -rv "$tmpDir/$repository/TTF/*" "$pathFonts/truetype"
-	cp -rv "$tmpDir/$repository/OTF/*" "$pathFonts/opentype"
+	sudo cp -rv "$tmpDir/$repository/TTF/"* "$pathFonts/truetype"
+	sudo cp -rv "$tmpDir/$repository/OTF/"* "$pathFonts/opentype"
 	sudo fc-cache -fv
 	cleanGithub
-	trap 'rm -rf "$tmpDir"' EXIT
 }
 
 getUserDirs() {
@@ -518,13 +518,13 @@ EOF
 init() {
 	typeSystem
 	# clear
-	style
-	# getUserDirs
-	# installZsh
-	# fuentesNerdFonts
-	# wallpaper
-	# getPackages
-	# configSetup
+	# style
+	getUserDirs
+	installZsh
+	fuentesNerdFonts
+	wallpaper
+	getPackages
+	configSetup
 	finish
 }
 
@@ -534,5 +534,5 @@ init() {
 # ║              INICIANDO INSTALADOR               ║
 # ║                                                 ║
 # ╚═════════════════════════════════════════════════╝
-# LOGDIR="$HOME/.local/share/my_temp_scripts"
+LOGDIR="$HOME/.local/share/my_temp_scripts"
 init
