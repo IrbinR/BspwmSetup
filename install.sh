@@ -230,29 +230,24 @@ style(){
 }
 
 cleanGithub() {
-	rm -rf "$tmpDir/*"
+	rm -rf "$1/"*
 }
 
 validatePathFont() {
 	local directory=$1
 	if [[ ! -d "$directory" ]]; then
-		sudo mkdir -p "$directory"
+		[[ "$directory" == /usr/* ]] && sudo mkdir -p "$directory" || mkdir -p "$directory"
 	fi
 }
 
 fuentesNerdFonts() {
-	tmpDir=$(mktemp -d)
-	trap 'rm -rf "$tmpDir"' EXIT
 	local pathFonts="/usr/local/share/fonts"
-	local gitlab="https://gitlab.com/irbinr1/fuentesnerdfonts.git"
-	local repository="fuentesnerdfonts/NerdFonts"
-	git clone --depth 1 "$gitlab" "$tmpDir"
+	local repository="$(pwd)/fonts/NerdFonts"
 	validatePathFont "$pathFonts/truetype"
 	validatePathFont "$pathFonts/opentype"
-	sudo cp -rv "$tmpDir/$repository/TTF/"* "$pathFonts/truetype"
-	sudo cp -rv "$tmpDir/$repository/OTF/"* "$pathFonts/opentype"
+	sudo cp -rv "$repository/TTF/"* "$pathFonts/truetype"
+	sudo cp -rv "$repository/OTF/"* "$pathFonts/opentype"
 	sudo fc-cache -fv
-	cleanGithub
 }
 
 getUserDirs() {
@@ -326,10 +321,10 @@ EOF
   	sleep 3
 		zimfw_cmd="curl -fsSL https://raw.githubusercontent.com/zimfw/install/master/install.zsh | zsh"
 		if command -v curl >/dev/null 2>&1; then
-			(zimfw_cmd)
+			eval "$zimfw_cmd"
 		else
 			miniInstaller curl
-			(zimfw_cmd)
+			eval "$zimfw_cmd"
 		fi
 		cat <<EOF >>$LOGFILE
 		3
@@ -341,7 +336,7 @@ EOF
 		sed -i "s|zmodule asciiship|#zmodule asciiship|" "$filePath"
 
 		source "$HOME/.config/user-dirs.dirs"
-		sudo pacman -S starship --noconfirm
+		miniInstaller starship
 		cat <<EOF
 ========================================================
 |                       STARSHIP                       |
@@ -435,6 +430,7 @@ copyConfig() {
 }
 
 configSetup() {
+	local tmpDir="$XDG_DOWNLOAD_DIR/temporalDir"
 	local configsBspwm=(bspwm dunst mpd ncmpcpp picom polybar rofi)
 	local configs=(alacritty kitty fasfetch lsd yazi)
 	local mpdConfig="$HOME/.config/mpd/mpd.conf"
@@ -442,16 +438,18 @@ configSetup() {
 	local rofiConfig="$tmpDir/rofi"
 	local config="$HOME/.config"
 	local pathActual="$(pwd)/config"
+	validatePathFont "$tmpDir"
 	git clone --depth 1 https://github.com/IrbinR/dotfiles.git "$tmpDir"
 	copyConfig "${configs[@]}" "$config" "$tmpDir/dotfiles"
 	copyConfig "${configsBspwm[@]}" "$config" "$pathActual"
-	cleanGithub
-  git clone --depth=1 https://github.com/adi1090x/rofi.git "$tmpDir"
-  chmod +x "$rofiConfig/setup.sh"
-  sed -i "s|^music_directory.*|music_directory \"$XDG_MUSIC_DIR\"|" "$mpdConfig"
-  sed -i "s|mpd_music_dir.*|mpd_music_dir = \"$XDG_MUSIC_DIR\"|" "$ncmpcppConfig"
-  sed -i "s|DIR=\`pwd\`|DIR='$rofiConfig'|" "$rofiConfig/setup.sh"
-  ./"$rofiConfig/setup.sh"
+	cleanGithub "$tmpDir"
+	validatePathFont "$tmpDir"
+	git clone --depth=1 https://github.com/adi1090x/rofi.git "$tmpDir"
+	chmod +x "$rofiConfig/setup.sh"
+	sed -i "s|^music_directory.*|music_directory \"$XDG_MUSIC_DIR\"|" "$mpdConfig"
+	sed -i "s|mpd_music_dir.*|mpd_music_dir = \"$XDG_MUSIC_DIR\"|" "$ncmpcppConfig"
+	sed -i "s|DIR=\`pwd\`|DIR='$rofiConfig'|" "$rofiConfig/setup.sh"
+	./"$rofiConfig/setup.sh"
 	cat <<EOF >> "$HOME/.zshrc"
 # ========================================================
 # |                         YAZI                         |
@@ -478,6 +476,7 @@ alias ls='lsd --group-dirs=first'
 # ========================================================
 alias cat='bat'
 EOF
+	cleanGithub "$tmpDir"
 }
 
 wallpaper() {
