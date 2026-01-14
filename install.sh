@@ -522,7 +522,7 @@ init() {
 	installZsh
 	fuentesNerdFonts
 	wallpaper
-	getPackages
+	installerPackage
 	configSetup
 	finish
 }
